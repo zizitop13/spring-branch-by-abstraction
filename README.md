@@ -11,13 +11,31 @@
 Если вам будет, что то не понятно, то в конце я оставлю материалы по которым сам все это осваивал.
 
 
-###Профили
-Начнем с самого простого и наверное для большенства известного приема, использования профилей, 
-но для начала нам нужно приложение которое будет что-то делать.
+###Приложение
 Я не придумал ни чего лучше как написать приложения "оповещатель", REST сервис которому мы передаем оповещение в виде
  json а он уже оповещает кого написано. Напишем первую реализацию которая будет отправлять сообщение на почту. 
  
-Email заглушка
+ Для начала опишем свойства нашего сервиса в виде ConfigurationProperties. 
+ У нас будут два свойства: sender-email - почтовый адресс отправителя и email-subject - тема письма в оповещении.
+
+ ```java
+ @Getter
+ @Setter
+ @Component
+ @Validated
+ @ConfigurationProperties(prefix = "notification")
+ public class NotificationProperties {
+ 
+     @Email
+     @NotBlank
+     private String senderEmail;
+ 
+     @NotBlank
+     private String emailSubject;
+ }
+ ```
+
+Теперь сделаем компонент который будет отправлять оповещения на почту, сделаем просто заглушу, реализация для данного примера нам не понадобится.
  ```java
 @Slf4j
 @Component
@@ -35,21 +53,10 @@ public class EmailSender {
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
 public class Notification {
     private String text;
     private String recipient;
-}
-```
-
-Опишем свойства нашего сервиса в виде ConfigurationProperties
-```java
-@Getter
-@Setter
-@Component
-@ConfigurationProperties(prefix = "notification")
-public class NotificationProperties {    
-    private String notificationSenderEmail;
-    private String notificationEmailSubject;
 }
 ```
 
@@ -73,7 +80,7 @@ public class NotificationService {
 }
 ```
 
-Контроллер
+И наконец контроллер
 ```java
 @RestController
 @RequiredArgsConstructor
@@ -88,10 +95,48 @@ public class NotificationController {
 }
 ```
 
+Ещё нам конечно понадобится тест, напишем его для NotificationService
+```java
+@SpringBootTest
+class NotificationServiceTest {
 
+    @Autowired
+    NotificationService notificationService;
 
+    @Autowired
+    NotificationProperties properties;
 
+    @MockBean
+    EmailSender emailSender;
 
+    @Test
+    void emailNotification() {
+        Notification notification = Notification.builder()
+                .recipient("test@email.com")
+                .text("some text")
+                .build();
+
+        notificationService.notify(notification);
+
+        ArgumentCaptor<String> emailCapture = ArgumentCaptor.forClass(String.class);
+        verify(emailSender, times(1))
+                .sendEmail(emailCapture.capture(),emailCapture.capture(),emailCapture.capture(),emailCapture.capture());
+        assertThat(emailCapture.getAllValues())
+                .containsExactly(properties.getSenderEmail(),
+                                notification.getRecipient(),
+                                properties.getEmailSubject(),
+                                notification.getText()
+                );
+    }
+}
+```
+
+Написали, сделали rebase, прогнали сборку с тестами и запушили - эта послдеовательность должна войти в привычку и делаться как можно чаще.
+
+###Профили
+Начнем с самого простого и наверное для большенства известного приема, использования профилей.
+Для начала вам нужно включить все ваше воображение и представить, что нам понадобилось оповещать кого-то по расписанию. 
+Что же сделаем отдельные класс под эту задачу.  
 
 
 

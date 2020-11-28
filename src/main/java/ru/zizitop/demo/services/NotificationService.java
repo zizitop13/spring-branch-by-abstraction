@@ -16,9 +16,9 @@ public class NotificationService {
     private final NotificationProperties notificationProperties;
 
     public void notify(Notification notification){
-        String from = notificationProperties.getNotificationSenderEmail();
+        String from = notificationProperties.getSenderEmail();
         String to = notification.getRecipient();
-        String subject = notificationProperties.getNotificationEmailSubject();
+        String subject = notificationProperties.getEmailSubject();
         String text = notification.getText();
         emailSender.sendEmail(from, to, subject, text);
     }

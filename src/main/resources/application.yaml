@@ -1,0 +1,3 @@
+notification:
+  email-subject: Auto notification
+  sender-email: robot@somecompany.com
