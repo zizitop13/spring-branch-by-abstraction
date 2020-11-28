@@ -1,16 +1,15 @@
-package ru.zizitop.demo.services;
+package ru.zizitop.demo.tasks;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.zizitop.demo.model.Notification;
 import ru.zizitop.demo.properties.NotificationProperties;
+import ru.zizitop.demo.services.NotificationService;
 
 @Component
-@EnableScheduling
 @RequiredArgsConstructor
-public class ScheduledTask {
+public class NotificationTask {
 
     private final NotificationService notificationService;
 
