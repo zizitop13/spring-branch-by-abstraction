@@ -22,7 +22,6 @@ public class NotificationProperties {
     private String senderEmail;
 
     @NotBlank
-    @NotBlank
     private String emailSubject;
 
     @Email
