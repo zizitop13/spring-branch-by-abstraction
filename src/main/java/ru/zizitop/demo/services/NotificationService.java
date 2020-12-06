@@ -2,7 +2,7 @@ package ru.zizitop.demo.services;
 
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import ru.zizitop.demo.model.Notification;
 import ru.zizitop.demo.properties.FeatureProperties;
@@ -20,8 +20,8 @@ public class NotificationService {
 
     private final FeatureProperties featureProperties;
 
-    @Autowired(required = false)
-    private NotificationRepository notificationRepository;
+    @Nullable
+    private final NotificationRepository notificationRepository;
 
 
     public void notify(Notification notification){
