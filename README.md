@@ -1,49 +1,86 @@
-Spring Boot и TBD, или ветвись оно все по абстракции
+# Spring Boot и TBD, или ветвись оно все по абстракции
 
 Всем привет! 
 
-Наступила осень, приближается зима, листья уже давно опали и перепутанные ветви кустарников наталкивают меня 
+Закончилась осень, зима вступила в свои законные права, листья уже давно опали и перепутанные ветви кустарников наталкивают меня 
 на мысли о моём рабочем Git репозитории... 
-Но вот начался новый проект: новая команда, новый девственно чистый репозиторий, с единственной веткой master.
-"Тут все будет по другому" - думаю я и начинаю гуглить про TBD. 
+Но вот начался новый проект: новая команда, новый девственно чистый, как только что выпавший снег, репозиторий.
+"Тут все будет по другому" - думаю я и начинаю "гуглить" про Trunk Based Development. 
 
-Если у вас никак не получается поддерживать git flow, вам надоели кучи этих непонятных веток и правил для них, 
-а главное вы пишите на spring boot, то добро пожаловать в под кат. 
-Там я пробегусь по основным моментам Trunc Based Development и уделю особое внимание такому приему, 
-как Branch By Abstraction и как spring boot нам поможет в этом.  
+Если у вас никак не получается поддерживать git flow, вам надоели кучи этих непонятных веток и правил для них,
+если в вашем проекте появляются ветки вида "develop/ivanov" и вы пишите на Spring Boot, то добро пожаловать в под кат! 
+Там я пробегусь по основным моментам Trunk Based Development и расскажу о том,  как реализовать такой подход, используя Spring Boot.
+В своей статье я разберу практические аспекты Trunk Based Development,а по теоритической части в конце и походу статьи будут ссылки.  
 <img src="https://habrastorage.org/webt/eg/ge/bd/eggebdf6kbkduv9iws-ieolkk8a.jpeg" />  
 <cut />
-<h2>Initial commit</h2>
-Без лишних пояснений, давайте опробуем основные концепции на примере, который вы будете делать вместе со мной. 
-Если вам будет, что то не понятно, то в конце я оставлю материалы по которым сам все это осваивал.
+<h2>Введение</h2>
+[Trunk Based Development](https://trunkbaseddevelopment.com/) это подход,
+ при котором вся разработка ведется на основе единственной ветки trunk (ствол).
+Чтобы воплотить такой подход в жизнь, нам нужно следовать трем основным правилам:
+
+1) Любые коммиты в trunk не должны ломать сборку.
+
+2) Любые коммиты в trunk должны быть маленькими, на столько, что ревью нового кода не должно занимать более 10 минут.
+
+3) Релиз выпускается только на основе trunk.
+
+Договорились? Теперь давайте разбираться на примере. 
 
 
-<h2>Приложение</h2>
+## Первый коммит
 Я не придумал ни чего лучше как написать приложения "оповещатель", REST сервис которому мы передаем оповещение в виде
- json а он уже оповещает кого написано. Напишем первую реализацию которая будет отправлять сообщение на почту. 
+json, а он уже оповещает кого написано. Для начала собирем наш проект на [spring initializr](https://start.spring.io/). 
+Я сделал Maven Project, язык Java версия 8, Spring Boot 2.4.0.
+Зависимости нам понадобятся следующие:
+
+<details>
+<summary>Зависимости</summary>
+   
+|Название|Тип|Описание|
+|-------|-------|-------|
+|Spring Configuration Processor| DEVELOPER TOOLS| Generate metadata for developers to offer contextual help and "code completion" when working with custom configuration keys (ex.application.properties/.yml files).|
+|Validation| I/O| JSR-303 validation with Hibernate validator.|
+|Spring Web| WEB| Build web, including RESTful, applications using Spring MVC. Uses Apache Tomcat as the default embedded container.|
+|Lombok| DEVELOPER TOOLS| Java annotation library which helps to reduce boilerplate code.|
+
+</details>
+
+Инициализируем git репозиторий и пушим на [GitHub](https://github.com/) или куда вам больше нравится. Основную ветку можно назвать 
+как вам больше нравится: main, master или даже так и назвать - trunk, чтобы всем сразу было понятно чем вы тут занимаетесь. 
+Все. Посадили деревце. Теперь будем бережено его выращивать. 
  
- Для начала опишем свойства нашего сервиса в виде ConfigurationProperties. 
- У нас будут два свойства: sender-email - почтовый адресс отправителя и email-subject - тема письма в оповещении.
+## Первая фича
+
+Напишем первую реализацию которая будет отправлять сообщение на почту. 
+Для начала опишем свойства нашего сервиса в виде [ConfigurationProperties](https://www.baeldung.com/configuration-properties-in-spring-boot). 
+У приложения пока будут  только два свойства: 
+sender-email - почтовый адресс отправителя и email-subject - тема письма в оповещении.
+
+<details>
 
  ```java
  @Getter
  @Setter
  @Component
- @Validated
+ @Validated //говорим, что свойства должны проверяться
  @ConfigurationProperties(prefix = "notification")
  public class NotificationProperties {
  
-     @Email
-     @NotBlank
+     @Email //проверяем что это почта
+     @NotBlank //проверяем что поле заполнено
      private String senderEmail;
  
      @NotBlank
      private String emailSubject;
  }
  ```
+</details>
 
-Теперь сделаем компонент который будет отправлять оповещения на почту, сделаем просто заглушу, 
-реализация для данного примера нам не понадобится.
+Теперь сделаем компонент который будет отправлять оповещения на почту, делаем просто заглушу. 
+>Собственно реализация для данного примера нам вообще не понадобится.
+
+<details>
+
  ```java
 @Slf4j
 @Component
@@ -56,7 +93,11 @@ public class EmailSender {
     }
 }
  ```  
+</details>
+
 Напишем простую модельку для оповещения 
+<details>
+
 ```java
 @Getter
 @Setter
@@ -68,7 +109,11 @@ public class Notification {
 }
 ```
 
+</details>
+
 Сервис оповещения
+<details>
+
 ```java
 @Service
 @RequiredArgsConstructor
@@ -87,8 +132,11 @@ public class NotificationService {
     }
 }
 ```
+</details>
 
 И наконец контроллер
+<details>
+
 ```java
 @RestController
 @RequiredArgsConstructor
@@ -102,8 +150,11 @@ public class NotificationController {
     }
 }
 ```
+</details>
 
-Ещё нам конечно понадобится тест, напишем его для NotificationService
+Ещё нам конечно понадобится тесты. Напишем тест для NotificationService
+<details>
+
 ```java
 @SpringBootTest
 class NotificationServiceTest {
@@ -139,12 +190,61 @@ class NotificationServiceTest {
 }
 ```
 
-Написали, сделали rebase, прогнали сборку с тестами и запушили в master - эта послдеовательность должна войти в привычку и делаться как можно чаще.
+</details>
 
-<h2>Профили</h2>
+И для NotificationController 
+<details>
+
+```java
+@WebMvcTest(controllers = NotificationController.class)
+class NotificationControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    @MockBean
+    NotificationService notificationService;
+
+    @SneakyThrows
+    @Test
+    void testNotify() {
+        ArgumentCaptor<Notification> notificationArgumentCaptor = ArgumentCaptor.forClass(Notification.class);
+        Notification notification = Notification.builder()
+                .recipient("test@email.com")
+                .text("some text")
+                .build();
+
+        mockMvc.perform(post("/notification/notify")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(notification)))
+                .andExpect(status().isOk());
+
+        verify(notificationService, times(1)).notify(notificationArgumentCaptor.capture());
+        assertThat(notificationArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .isEqualTo(notification);
+    }
+}
+```
+</details>
+
+Написали, сделали rebase, прогнали сборку с тестами и запушили в trunk - эта послдеовательность 
+должна войти в привычку и делаться как можно чаще.
+
+
+Для настоящих проектов я очень рекомендую делать первый коммит именно таким, чтобы он был как можно меньше и удовлетворял нашему
+второму правилу - ревью менешь чем за 10 минут. Так что на первом этапе можно и даже нужно делать вместо настоящих реализаций заглушки.    
+
+
+## Профили
 Начнем с самого простого и наверное для большенства известного приема, использования профилей.
-Для начала вам нужно включить все ваше воображение и представить, что нам понадобилось оповещать кого-то по расписанию. 
-Что же сделаем отдельные класс под эту задачу.  
+Для начала вам нужно включить все ваше воображение и представить, что нам вдруг понадобилось оповещать кого-то по расписанию. 
+Ну что же сделаем отдельный клас под эту задачу.  
+<details>
+
 ```java
 @Component
 @EnableScheduling
@@ -164,17 +264,29 @@ public class NotificationTask {
     }
 }
 ```
-Теперь прогоним наш тест и получим исключение: org.mockito.exceptions.verification.TooManyActualInvocations.
-Т.е. тест нам сказал, что ожидался один вызов метода а было два. Не порядок. Можно конечно выставить задаче initialDelay, но это 
-будет кастыль. Вместо этого как вы уже наверное догадались мы применим профиль. Вынисем аннотацию @EnableScheduling 
-в отдельную конфигурацию и добавим аннотацию @Profile где скажем, что запускать задачи всегда, кроме как в профиле test.
+
+</details>
+
+Теперь прогоним наши тесты и получим исключение для теста сервиса: org.mockito.exceptions.verification.TooManyActualInvocations.
+Конечно, ведь в нашем тесте ожидался один вызов метода notify, а получилось больше, так как теперь этот же метод вызывается в задаче.
+Не порядок.
+Можно конечно выставить задаче initialDelay, что бы тест успел запустится раньше чем задача, но это будет кастыль.
+Вместо этого как вы уже наверное догадались мы применим профиль. 
+Вынисем аннотацию @EnableScheduling в отдельную конфигурацию и добавим аннотацию @Profile где скажем,
+что нужно запускать задачи всегда, кроме как в профиле "test".
+<details>
+
 ```java
 @Profile("!test")
 @Configuration
 @EnableScheduling
 public class SchedulingConfig {}
 ```
+</details>
+
 В тестовых ресурсах, в application.yaml добавим включение профиля:
+<details>
+
 ```yaml
 spring:
   profiles:
@@ -183,18 +295,40 @@ notification:
   email-subject: Auto notification
   sender-email: robot@somecompany.com
 ```
-Теперь все должно заработать, в тестах задачи по расписанию больше не запускаются, но если мы просто запустим приложение из main метода, то 
-задачи будут исправно тикать. Используйте профили тогда когда вам нужно выключить целый пласт какой-либо логики, 
-например безопасность или мониторинг или что-нибудь ещё. В основном я использовал профили для тестирования, но ни кто вам не запретит
-использовать их по-своему, главное как мне кажется с ними не мельчить и не создавать их много. Для точечного управления логикой
-приложения лучше использовать Feature flags.
-Сделали rebase, прогнали сборку с тестами и запушили в master.
+</details>
+Теперь все должно заработать, в тестах задачи по расписанию больше не запускаются, 
+но если мы просто запустим приложение из main метода, то задачи будут исправно тикать.
+
+В своей работе в основном я использую профили именно для задач тестирования, но ни кто вам не запретит
+использовать их для своих целей, главное как мне кажется с ними не мельчить и не создавать их много.
+Используйте профили тогда когда вам нужно включать или выключать целый слой какой-либо логики, 
+например безопасность или мониторинг.
+
+Для более точечного управления функциями приложения лучше использовать
+ [Feature flags](https://trunkbaseddevelopment.com/feature-flags/), 
+но этот способ мы рассмотри уже после первого нашего релиза.
+Сделали rebase, прогнали сборку с тестами и запушили в trunk.
+
+## Первый релиз
+Настало время выпустить первый релиз нашего приложения.
+В TBD описано два способа выпускать релизы: первый из [релизной ветки](https://trunkbaseddevelopment.com/branch-for-release/),
+второй прямо из [trunk](https://trunkbaseddevelopment.com/release-from-trunk/).
+Здесь я разберу первый способ, так как второй сам ещё не пробовал.
+
+Создаем в нашем репозитории ветку Release 
+
+
+
+
  
-<h2>Feature flags</h2>
-Теперь нас попросили добавить немного аудита в нашу систему. Каждое оповещение должно сохраняться в БД. Только вот проблема в том, что 
-не всем пользователям такая фича уже нужна, кто-то развернул себе базу данных, кто-то ещё нет. Давайте попрбуем, чтобы и овцы целы 
-волки сыты.
+## Feature flags
+Дальше у нас стоит задача добавить немного аудита в нашу систему - каждое оповещение должно сохраняться в БД.
+ Только вот проблема в том, что не известно когда на production развернут базу данных, чтобы ни кого не ждать, 
+ мы обернем данную функциональность в feature flag.
+   
  Нашу модель переделываем в Entity. Осторожно много аннтоаций!
+ <details>
+ 
 ```java
 @Entity
 @Getter
@@ -212,6 +346,7 @@ public class Notification {
     private LocalDateTime time;
 }
 ```
+</details>
 
 
 
