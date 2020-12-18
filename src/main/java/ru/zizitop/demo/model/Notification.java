@@ -23,4 +23,5 @@ public class Notification {
     private String recipient;
     @CreationTimestamp
     private LocalDateTime time;
+    private NotificationType notificationType;
 }

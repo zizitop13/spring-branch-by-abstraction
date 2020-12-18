@@ -2,6 +2,7 @@ package ru.zizitop.demo.services;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import ru.zizitop.demo.model.Notification;
@@ -10,6 +11,7 @@ import ru.zizitop.demo.properties.NotificationProperties;
 import ru.zizitop.demo.repositories.NotificationRepository;
 import ru.zizitop.demo.senders.EmailSender;
 
+@Primary
 @Service
 @RequiredArgsConstructor
 public class EmailNotificationService implements NotificationService {

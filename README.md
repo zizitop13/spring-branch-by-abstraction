@@ -270,7 +270,7 @@ public class NotificationTask {
 
 </details>
 
-Теперь прогоним наши тесты и получим исключение для теста сервиса: org.mockito.exceptions.verification.TooManyActualInvocations.
+Теперь прогоним наши тесты и получим исключение для теста сервиса: "org.mockito.exceptions.verification.TooManyActualInvocations".
 Конечно, ведь в нашем тесте ожидался один вызов метода sendEmail, а получилось больше,
  так как теперь этот же метод вызывается в задаче.
 Не порядок.
@@ -507,7 +507,7 @@ public class DataJpaConfig {
 Это довольно серьезня доработка, поэтому мы не хотим с ней торопится, мы хотим тщательно проработать  
 архитектуру решения, да так чтобы в его развитие принемало как можно больше разработчиков. Поэтому 
 мы не будет делать в Git отдельную ветку, в которой можно было бы хранить нестабильный код, а сделаем 
-ветку внтури программы с помощью выделения абстрактного слоя.  
+ветку внтури программы с помощью [выделения абстрактного слоя](https://martinfowler.com/bliki/BranchByAbstraction.html).  
 
 Первым делом нам нужно сделать интерфейс NotificationService вместо класса, а сам класс переименовать в 
 EmailNotificationService. В Inellij IDEA это можно провернуть с помощью рефакторинга:
@@ -515,15 +515,137 @@ EmailNotificationService. В Inellij IDEA это можно провернуть
 1) Правой кнопкой по классу, выбрать Refactor/Extract interface...
 2) Выбрать опцию "Rename original class and use interface where possible"
 3) В поле "Rename implementation class to" вписываем "EmailNotificationService"
-4) В "Members to from interface" нажать галочку напротив метода notify
+4) В "Members to from interface" нажать галочку напротив метода "notify"
 5) Нажать кнопку "Refactor"
 
-После этого все классы станут ссылаться на интерфейс NotificationService, 
-а рядом в пакете появится EmailNotificationService.
+После этого все классы должны ссылаться на интерфейс NotificationService, 
+а рядом в пакете появится EmailNotificationService где будет страря реализация.
 
 Сделали rebase, прогнали сборку с тестами и запушили в trunk. 
 После этого можно спокойно продолжать работу уже над новой реализацией.
+Добавим в модель поле с типом оповещения, пусть это просто Enum.
 
+<details>
+
+```java
+public enum NotificationType {
+    EMAIL, SMS, PUSH
+}
+```
+</details>
+
+Так же нам нужно будет добавить два новых компонента "отправителя":
+
+SmsSender и PushSender.
+<details>
+
+```java
+@Slf4j
+@Component
+public class SmsSender {
+    /**
+     * Отправляет сообщение на телефон
+     */
+    public void sendSms(String phoneNumber, String text){
+        log.info("Send sms {}\nto: {}\nwith text: {}", phoneNumber, text);
+    }    
+}
+
+@Slf4j
+@Component
+public class PushSender {    
+    /**
+     * Отправляет push уведомления
+     */
+    public void push(String id, String text){
+        log.info("Push {}\nto: {}\nwith text: {}", id, text);
+    }
+}
+```
+</details>
+
+Новую реалзиацию сервиса назовем MultipleNotificationService, и для начала реалзиуем "в лоб".
+
+<details>
+
+```java
+@Service
+@RequiredArgsConstructor
+public class MultipleNotificationService implements NotificationService {
+
+    private final EmailSender emailSender;
+
+    private final PushSender pushSender;
+
+    private final SmsSender smsSender;
+
+    private final NotificationProperties notificationProperties;
+   
+    private final NotificationRepository notificationRepository;
+
+
+    @Override
+    public void notify(Notification notification) {
+        String from = notificationProperties.getSenderEmail();
+        String to = notification.getRecipient();
+        String subject = notificationProperties.getEmailSubject();
+        String text = notification.getText();
+
+        switch (notification.getNotificationType()) {
+            case PUSH:
+                pushSender.push(to, text);
+                break;
+            case SMS:
+                smsSender.sendSms(to, text);
+                break;
+            case EMAIL:
+            default:
+                emailSender.sendEmail(from, to, subject, text);
+                break;
+
+        }
+        notificationRepository.save(notification);
+    }
+}
+```
+</details>
+
+Запустив тесты, обнаружим, что NotificationServiceTest стал падать с ошибкой: 
+"expected single matching bean but found 2: emailNotificationService,multipleNotificationService".
+На данном этапе лечить будем добавлением аннотации **@Primary** над старой реализацией сервиса - EmailNotificationService.
+
+Сделали rebase, прогнали сборку с тестами, запушили в trunk, получили от команды по шапке за switch-case.
+
+>Реализовать логику красиво позовлит шаблон "[Стратегия](https://medium.com/@ravthiru/strategy-design-pattern-with-in-spring-boot-application-2ff5a7486cd8)",
+но тут есть прблема в том, что у всех компонент "отправителей" разные интерфейсы, собственно как скорее всего и будет в 
+реальности, ведь обычно такие компоненты предоставляются внешними библиотекам. 
+Решить проблему с разными интерфейсами можно с помощью шаблона "[Адаптер](https://springframework.guru/gang-of-four-design-patterns/adapter-pattern/)".
+Расписывать подробно здесь не буду, статья всетаки о другом, но код вы можете
+посмотреть на [GitHub](https://github.com/zizitop13/spring-branch-by-abstraction).
+
+
+После того как сделали все красиво, пробуем ещё раз: rebase, прогнали сборку с тестами, запушили в trunk.
+На этот раз код не вызвал ни у кого негатива в команде, и можно его включать в программу.
+Сделать это можно по-разному, в зависимости от ситуации:
+
+1) Переставить аннотацию @Primary на новую реализацию - нужно учитывать, что Spring создаст обе реализации, но инъекция будет 
+приоритетна для аннотрованного @Primary, если не указана аннтоация @Qualifier которая говорит об обратном, 
+что может запутать и привести к ошибкам.
+Ещё одним минусом будет, что после сборки нельзя будет откатить изменения. Плюс тут пожалуй один - это просто сделать.
+
+2) Использовать аннотацию @Profile - такой вариант даст возможность поменять реализацию без пересборки проекта, но 
+как говорилось выше профили лучше задействовать на что-то более долговременное. 
+
+3) Использовать "feature flag" - пожалуй мой любимый вариант, он не вносит сильной путаницы как это могут сделать @Primary 
+и @Profile, позволяет переключать реализацию без пересборки (он для этого и придуман), а так же, если постараться можно сделать 
+возможность переключения прямо 
+в [runtime](https://onix-systems.medium.com/introduction-to-feature-flags-in-java-using-the-spring-boot-framework-9167d67e4d27)!
+
+После того как новая версия будет обкатана, вместе с feature флагом нужно будет удалить и старую реализацию, 
+а вот выделенную абстракцию лучше всетаки оставить.  
+
+
+   
 
 
 

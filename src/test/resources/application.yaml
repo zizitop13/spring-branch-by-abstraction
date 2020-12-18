@@ -1,6 +1,9 @@
 spring:
   profiles:
     active: test
+  jpa:
+    show-sql: true
+
 
 
 notification:
@@ -9,4 +12,4 @@ notification:
 
 features:
   active:
-    persistence: off
+    persistence: on
