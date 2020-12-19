@@ -2,6 +2,7 @@ package ru.zizitop.demo.services;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import ru.zizitop.demo.senders.EmailSender;
 @Primary
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "features.active", name = "multiple-senders", havingValue = "false", matchIfMissing = true)
 public class EmailNotificationService implements NotificationService {
 
     private final EmailSender emailSender;

@@ -12,4 +12,5 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "features.active")
 public class FeatureProperties {
     boolean persistence;
+    boolean multipleSenders;
 }
