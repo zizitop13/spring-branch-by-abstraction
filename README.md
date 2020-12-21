@@ -787,21 +787,30 @@ Trunk Based Development - отличная модель ветвления, ко
 не просто интересным приемом, а обыденностью. 
 
 TBD - очень гибкая методология, у неё есть несколько вариаций из которых вы сможете выбрать наиболее подходящий вариант, 
-и конечно для её применения не обязательно использовать Spring Boot, просто как мне кажется с ним удобнее.
+и конечно для её применения не обязательно использовать Spring Boot, но надеюсь я смог показать, что с ним это просто и удобно.
 
-На этом всё, спасибо за внимание!
+На этом всё, внизу будут все ссылки из статьи,  спасибо за внимание!
 
 
 ## Ссылки
-[GitHub](https://github.com/zizitop13/spring-branch-by-abstraction)
+[Мой код на GitHub](https://github.com/zizitop13/spring-branch-by-abstraction)
 
 [TBD](https://trunkbaseddevelopment.com/)
 
+[spring initializr](https://start.spring.io/)
+
+[ConfigurationProperties](https://www.baeldung.com/configuration-properties-in-spring-boot)
+
 [Spring profiles](https://www.baeldung.com/spring-profiles)
 
-[Почему Trunk Based Development – лучшая модель ветвления. (Хабр)](https://habr.com/ru/post/519314/)
+[Feature flags](https://trunkbaseddevelopment.com/feature-flags/)
+
+[релизная ветка](https://trunkbaseddevelopment.com/branch-for-release/)
+
+[релиз из trunk](https://trunkbaseddevelopment.com/release-from-trunk/)
 
 [Branch by abstraction](https://martinfowler.com/bliki/BranchByAbstraction.html)
 
-[Feature flags in spring](https://onix-systems.com/blog/introduction-to-feature-flags-in-java-using-the-spring-boot-framework)
-  
+[Стратегия](https://medium.com/@ravthiru/strategy-design-pattern-with-in-spring-boot-application-2ff5a7486cd8)
+
+[Адаптер](https://springframework.guru/gang-of-four-design-patterns/adapter-pattern/)
